@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-class InputEmbeddings(nn.Module):
 
+class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int):
         super().__init__()
         self.d_model = d_model
@@ -10,10 +10,12 @@ class InputEmbeddings(nn.Module):
         self.embedding = nn.Embedding(vocab_size, d_model)
 
     def forward(self, x):
-        return self.embedding(x) * torch.sqrt(torch.tensor(self.d_model, dtype=torch.float32))
-    
-class PositionalEncoding(nn.Module):
+        return self.embedding(x) * torch.sqrt(
+            torch.tensor(self.d_model, dtype=torch.float32)
+        )
 
+
+class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float) -> None:
         super().__init__()
         self.d_model = d_model
@@ -24,7 +26,10 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(seq_len, d_model)
         # Create a vector of shape (seq_len, 1)
         position = torch.arange(0, seq_len, dtype=torch.float32).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-torch.log(torch.tensor(10000.0)) / d_model))
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float()
+            * (-torch.log(torch.tensor(10000.0)) / d_model)
+        )
         # Fill the even indices with sin
         pe[:, 0::2] = torch.sin(position * div_term)
         # Fill the odd indices with cos
@@ -34,20 +39,22 @@ class PositionalEncoding(nn.Module):
 
         # Register the buffer instead of a model parameter
         # so that it is not updated during backpropagation
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
         # Add the positional encoding to the input tensor
-        x = x + (self.pe[:, :x.shape(1), :]).requires_grad_(False) # (batch_size, seq_len, d_model)
+        x = x + (self.pe[:, : x.shape(1), :]).requires_grad_(
+            False
+        )  # (batch_size, seq_len, d_model)
         return self.dropout(x)
-    
-class LayerNormalization(nn.Module):
 
+
+class LayerNormalization(nn.Module):
     def __init__(self, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
-        self.alpha = nn.Parameter(torch.ones(1)) # Multiplied
-        self.bias = nn.Parameter(torch.zeros(1)) # Added
+        self.alpha = nn.Parameter(torch.ones(1))  # Multiplied
+        self.bias = nn.Parameter(torch.zeros(1))  # Added
 
     def forward(self, x):
         # X shape: (batch, seq_len, hidden_size)
@@ -55,4 +62,3 @@ class LayerNormalization(nn.Module):
         mean = x.mean(dim=-1, keepdim=True)
         std = x.std(dim=-1, keepdim=True)
         return self.alpha * (x - mean) / (std + self.eps) + self.bias
-    
