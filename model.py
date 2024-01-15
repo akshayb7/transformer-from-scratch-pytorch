@@ -220,3 +220,15 @@ class DecoderBlock(nn.Module):
         )
         x = self.residual_connection_3(x, self.feed_forward_block)
         return x
+
+
+class Decoder(nn.Module):
+    def __init__(self, layers: nn.Module) -> None:
+        super().__init__()
+        self.layers = layers
+        self.norm = LayerNormalization()
+
+    def forward(self, x, encoder_output, src_mask, tgt_mask):
+        for layer in self.layers:
+            x = layer(x, encoder_output, src_mask, tgt_mask)
+        return self.norm(x)
