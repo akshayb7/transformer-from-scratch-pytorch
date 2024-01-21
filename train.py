@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from dataset import BilingualDataset, causal_mask
+from model import build_transformer
 
 from datasets import load_dataset
 from pathlib import Path
@@ -89,3 +90,14 @@ def get_ds(config):
     )
 
     return train_dl, val_dl, tokenizer_src, tokenizer_tgt
+
+
+def get_model(config, vocab_src_len, vocab_tgt_len):
+    model = build_transformer(
+        vocab_src_len,
+        vocab_tgt_len,
+        config["seq_len"],
+        config["seq_len"],
+        config["d_model"],
+    )
+    return model
