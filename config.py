@@ -1,24 +1,21 @@
-import configparser
-import Path
+from pathlib import Path
 
 
 def get_config():
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-
     return {
-        "batch_size": config.getint("train", "batch_size"),
-        "num_epochs": config.getint("train", "num_epochs"),
-        "lr": config.getfloat("train", "lr"),
-        "seq_len": config.getint("train", "seq_len"),
-        "d_model": config.getint("train", "d_model"),
-        "lang_src": config.get("train", "lang_src"),
-        "lang_tgt": config.get("train", "lang_tgt"),
-        "model_folder": config.get("train", "model_folder"),
-        "model_basename": config.get("train", "model_basename"),
-        "preload": config.get("train", "preload"),
-        "tokenizer_file": config.get("train", "tokenizer_file"),
-        "experiment_name": config.get("train", "experiment_name"),
+        "batch_size": 8,
+        "num_epochs": 20,
+        "lr": 0.0001,
+        "seq_len": 350,
+        "d_model": 512,
+        "lang_src": "en",
+        "lang_tgt": "it",
+        "model_folder": "weights",
+        "model_basename": "tmodel_",
+        "preload": None,
+        "tokenizer_file": "tokenizer_{0}.json",
+        "experiment_name": "runs/tmodel",
+        "train_size": 0.9,
     }
 
 
