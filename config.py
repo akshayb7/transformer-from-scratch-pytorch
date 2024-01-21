@@ -1,4 +1,5 @@
 import configparser
+import Path
 
 
 def get_config():
@@ -14,8 +15,15 @@ def get_config():
         "lang_src": config.get("train", "lang_src"),
         "lang_tgt": config.get("train", "lang_tgt"),
         "model_folder": config.get("train", "model_folder"),
-        "model_filename": config.get("train", "model_filename"),
+        "model_basename": config.get("train", "model_basename"),
         "preload": config.getboolean("train", "preload"),
         "tokenizer_file": config.get("train", "tokenizer_file"),
         "experiment_name": config.get("train", "experiment_name"),
     }
+
+
+def get_weights_file_path(config, epoch: str):
+    model_folder = config["model_folder"]
+    model_basename = config["model_basename"]
+    model_filename = f"{model_basename}_{epoch}.pt"
+    return str(Path(".") / model_folder / model_filename)
