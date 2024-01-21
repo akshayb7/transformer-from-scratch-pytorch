@@ -43,7 +43,7 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         # Add the positional encoding to the input tensor
-        x = x + (self.pe[:, : x.shape(1), :]).requires_grad_(
+        x = x + (self.pe[:, : x.shape[1], :]).requires_grad_(
             False
         )  # (batch_size, seq_len, d_model)
         return self.dropout(x)
@@ -122,7 +122,6 @@ class MultiHeadAttentionBlock(nn.Module):
         value = self.w_v(
             v
         )  # (batch_size, seq_len, d_model) --> (batch_size, seq_len, d_model)
-        query = query.view
 
         # Split the query, key, and value into h different parts
         # (batch_size, seq_len, d_model) --> (batch_size, seq_len, h, d_k) --> (batch_size, h, seq_len, d_k)
@@ -142,7 +141,7 @@ class MultiHeadAttentionBlock(nn.Module):
         x = (
             x.transpose(1, 2)
             .contiguous()
-            .view(x.shape[0], x.shape[1], self.h * self.d_k)
+            .view(x.shape[0], -1, self.h * self.d_k)
         )
 
         # (batch_size, seq_len, d_model)
