@@ -16,7 +16,7 @@ def get_config():
         "lang_tgt": config.get("train", "lang_tgt"),
         "model_folder": config.get("train", "model_folder"),
         "model_basename": config.get("train", "model_basename"),
-        "preload": config.getboolean("train", "preload"),
+        "preload": config.get("train", "preload"),
         "tokenizer_file": config.get("train", "tokenizer_file"),
         "experiment_name": config.get("train", "experiment_name"),
     }
