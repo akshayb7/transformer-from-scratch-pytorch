@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import warnings
 
 from dataset import BilingualDataset, causal_mask
 from model import build_transformer
@@ -13,6 +14,7 @@ from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 
 def get_all_sentences(ds, lang):
@@ -139,3 +141,73 @@ def train_model(config):
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         initial_epoch = checkpoint["epoch"] + 1
         global_step = checkpoint["global_step"]
+
+    # Define the loss function
+    # Label smoothing is a regularization technique that encourages the model to be less confident in its predictions.
+    # Stops from overfitting to the training data.
+    criterion = nn.CrossEntropyLoss(
+        ignore_index=tokenizer_src.token_to_id("[PAD]"), label_smoothing=0.1
+    ).to(device)
+
+    # Training loop
+    for epoch in range(initial_epoch, config["num_epochs"]):
+        model.train()
+        batch_iterator = tqdm(train_dataloader, desc=f"Epoch {epoch}")
+        for batch in batch_iterator:
+            encoder_input = batch["encoder_input"].to(device)  # (batch_size, seq_len)
+            decoder_input = batch["decoder_input"].to(device)  # (batch_size, seq_len)
+            label = batch["label"].to(device)  # (batch_size, seq_len)
+            encoder_mask = batch["encoder_mask"].to(
+                device
+            )  # (batch_size, 1, 1, seq_len)
+            decoder_mask = batch["decoder_mask"].to(
+                device
+            )  # (batch_size, 1, seq_len, seq_len)
+
+            # Run the forward pass
+            encoder_output = model.encode(
+                encoder_input, encoder_mask
+            )  # (batch_size, seq_len, d_model)
+            decoder_output = model.decode(
+                encoder_output, encoder_mask, decoder_input, decoder_mask
+            )  # (batch_size, seq_len, d_model)
+            proj_output = model.project(
+                decoder_output
+            )  # (batch_size, seq_len, vocab_size)
+
+            # Calculate the loss
+            # (batch_size * seq_len, vocab_size) --> (batch_size * seq_len, vocab_size)
+            loss = criterion(proj_output.view(-1, proj_output.size(-1)), label.view(-1))
+            batch_iterator.set_postfix({"loss": loss.item()})
+
+            # Log the loss
+            writer.add_scalar("Loss/train", loss.item(), global_step)
+            writer.flush()
+
+            # Backpropagate
+            loss.backward()
+
+            # Update the weights
+            optimizer.step()
+            optimizer.zero_grad()
+
+            global_step += 1
+
+        # Save the model
+        model_filename = get_weights_file_path(config, f"{epoch: 02d}")
+        print(f"Saving model weights to {model_filename}")
+        torch.save(
+            {
+                "epoch": epoch,
+                "global_step": global_step,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+            },
+            model_filename,
+        )
+
+
+if __name__ == "__main__":
+    warnings.filterwarnings("ignore")
+    config = get_config()
+    train_model(config)
